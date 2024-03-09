@@ -56,24 +56,6 @@ function fetchDataFromNetpie() {
     });
 }
 
-// app.post("/update_status", (req, res) => {
-//   const { status, bunzer, hum, temp } = req.body;
-//   var buzzer = 0;
-//   if (status == "BUZZER_ON") {
-//     buzzer = 1;
-//   } else {
-//     buzzer = 0;
-//   }
-//   const logEntry2 = {
-//     DATE: getCurrentDate(),
-//     Time: getCurrentTime(),
-//     Temp: temp,
-//     Hum: hum,
-//     Buzzer: buzzer,
-//   };
-//   saveDataToJSON2(logEntry2); // เซฟข้อมูลทันทีเมื่อได้รับคำสั่งจากอุปกรณ์ในเครือข่าย
-// });
-
 function getCurrentDate() {
   const date = new Date();
   const day = String(date.getDate()).padStart(2, "0");
@@ -90,8 +72,78 @@ function getCurrentTime() {
   return `${hours}:${minutes}:${seconds}`;
 }
 
+function publishDataToNetpie(payload) {
+  console.log(payload);
+  let targetTopic = "topic=lab_ict_kps%2Fcommand";
+  let apiurl = "http://api.netpie.io/v2/device/message" + "?" + targetTopic;
+  let headers = {
+    "Content-Type": "text/plain",
+    Authorization:
+      "Device 36762317-6e8d-445f-94f1-4548c0a62191:p1xYZpb3kPr3i5quDNBQkUg1gscPDgNh",
+  };
+  let data = payload;
+  axios
+    .put(apiurl, data, { headers })
+    .then(() => {
+      console.log("Data published successfully to Netpie.");
+    })
+    .catch((error) => {
+      console.log("Publish failed:", error);
+    });
+}
+
+setInterval(() => {
+  // ดึงข้อมูล time setting จาก JSON Server
+  axios
+    .get("http://localhost:3002/timesetting")
+    .then((response) => {
+      const timeSettings = response.data; // เปลี่ยน response.data เป็น response.data โดยตรง
+      const currentTime = new Date();
+      const currentHour = currentTime.getHours();
+      const currentMinute = currentTime.getMinutes();
+      const currentSecond = currentTime.getSeconds();
+      // console.log("BBB");
+      // console.log(response.data);
+
+      // เช็คว่ามีข้อมูล time setting ใน JSON หรือไม่
+      if (timeSettings && timeSettings.length > 0) {
+        // console.log("RRR");
+        // วนลูปเช็คทุก time setting
+        timeSettings.forEach((setting) => {
+          const [hour, minute] = setting.timesetting.split(":");
+          if (
+            parseInt(hour) === currentHour &&
+            parseInt(minute) === currentMinute &&
+            currentSecond === 0
+          ) {
+            // ตรวจพบว่าเวลาตรงกัน ส่งข้อมูลออกไป
+            const payload = "BUZZER_ON"; // สร้าง payload ตามต้องการ
+            publishDataToNetpie(payload);
+            setTimeout(() => {
+              fetchDataFromNetpie();
+              AfterAuto();
+            }, 5000);
+            // fetchDataFromNetpie();
+          }
+        });
+      }
+    })
+    .catch((error) => {
+      console.error("Error fetching time settings:", error);
+    });
+}, 1000); // เรียกฟังก์ชันทุกๆ 1 วินาที
+
+function AfterAuto() {
+  console.log("AfterAuto");
+  const payload = "BUZZER_OFF";
+  publishDataToNetpie(payload);
+  setTimeout(() => {
+    fetchDataFromNetpie();
+  }, 5000);
+}
+
 function saveDataToJSON(logEntry) {
-  console.log("BBBB");
+  // console.log("BBBB");
   axios
     .post("http://localhost:3002/log_data", logEntry)
     .then(() => {
@@ -101,18 +153,6 @@ function saveDataToJSON(logEntry) {
       console.error("Error saving data:", error);
     });
 }
-
-// function saveDataToJSON2(logEntry) {
-//   // console.log("ฟฟฟ");
-//   axios
-//     .post("http://localhost:3002/log_data", logEntry)
-//     .then(() => {
-//       console.log("Data saved successfully.");
-//     })
-//     .catch((error) => {
-//       console.error("Error saving data:", error);
-//     });
-// }
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);

@@ -49,6 +49,7 @@ export default {
     // Use setInterval to fetch data every 2 seconds
     setInterval(() => {
       this.fetchDataFromNetpie();
+
     }, 1000);
   },
   methods: {

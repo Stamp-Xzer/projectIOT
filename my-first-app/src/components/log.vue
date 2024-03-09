@@ -29,6 +29,7 @@ import axios from "axios";
 
 export default {
   name: "log_message",
+
   data() {
     return {
       data: [], // เริ่มต้น data เป็น array
@@ -38,8 +39,10 @@ export default {
     axios
       .get("http://localhost:3002/log_data")
       .then((response) => {
+        // เรียงลำดับตาม ID ในลำดับจากมากไปน้อย
+        const sortedData = response.data.sort((a, b) => b.id - a.id);
         // เลือกเฉพาะ 3 รายการล่าสุด
-        this.data = response.data.slice(-3);
+        this.data = sortedData.slice(0, 3);
         console.log(this.data);
       })
       .catch((error) => {

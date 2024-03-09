@@ -5,6 +5,9 @@
       <div class="text-center col-span-1">
         Temperature: {{ temp }} °C
         <div>Humidity: {{ hum }} %</div>
+        <p class="text-xl text-gray-500">
+          ความชื้นต่ำกว่า 50% ระบบจะทำการเปิดน้ำอัตโนมัติ
+        </p>
       </div>
     </div>
     <br />
@@ -31,7 +34,7 @@
       </div>
     </div>
     <br />
-    <div class="items-center grid grid-cols-3 w-screen text-2xl m-auto">
+    <div class="items-center grid grid-cols-2 w-screen text-2xl m-auto">
       <div class="text-center">
         <ion-icon name="alarm-outline" class="text-8xl"></ion-icon><br />
         <div class="font-bold">Time Auto</div>
@@ -98,79 +101,19 @@
       <div class="col-span-1">
         <div class="grid grid-cols-1 text-center text-4xl font-bold">
           เปิด/ปิดน้ำ
-          <div class="grid grid-cols-2">
-            <button
-              class="btn bg-green-400 font-bold hover hover:bg-green-200 col-span-1 mx-3 m-24"
-              @click="switchOpen(0)"
-            >
-              Open
-            </button>
-            <button
-              class="btn bg-red-400 font-bold hover hover:bg-red-200 col-span-1 mx-3 m-24"
-              @click="switchOpen(1)"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-      <div class="text-center col-span-1">
-        <ion-icon name="water-outline" class="text-8xl"></ion-icon><br />
-        <div class="font-bold">Humidity Auto</div>
-        <div v-for="item in Hum_Settings" :key="item.id" class="">
-          {{ item.humidity }} %
-          <!-- แสดงค่าความชื้นแทนเวลา -->
-          <button>
-            <ion-icon
-              name="trash-outline"
-              class="trashred"
-              @click="deleteHum_Setting(item.id)"
-            >
-              ></ion-icon
-            >
+          <button
+            class="btn bg-green-400 font-bold hover hover:bg-green-200 mx-64 m-3"
+            @click="switchOpen(0)"
+          >
+            Open
+          </button>
+          <button
+            class="btn bg-red-400 font-bold hover hover:bg-red-200 mx-64 m-3"
+            @click="switchOpen(1)"
+          >
+            Close
           </button>
         </div>
-        <button
-          class="btn btn-primary text-xl hover hover:btn-secondary hover:text-white"
-          onclick="humidityModal.showModal()"
-        >
-          Setting Humidity
-        </button>
-        <dialog id="humidityModal" class="modal modal-bottom sm:modal-middle">
-          <div class="modal-box">
-            <h3 class="font-bold text-5xl">Humidity Setting</h3>
-            <p class="py-4">
-              กรุณาระบุค่าความชื้นเพื่อเพิ่มค่าความชื้นในการเปิดน้ำอัตโนมัติ
-            </p>
-            <div class="modal-action justify-center text-center">
-              <form
-                @submit.prevent="addHum_Setting"
-                class="text-center"
-                method="dialog"
-              >
-                <div class="mb-4 mx-auto">
-                  <input
-                    type="number"
-                    v-model="newHumidity"
-                    placeholder=" Humidity (%)"
-                    class="placeholder-center text-lg"
-                    min="0"
-                    max="100"
-                    required
-                  />
-                </div>
-                <div>
-                  <button
-                    type="submit"
-                    class="btn btn-accent hover hover:text-black"
-                  >
-                    Add Humidity Setting
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </dialog>
       </div>
     </div>
     <div
@@ -289,13 +232,37 @@ export default {
                 ? curr
                 : prev;
             });
-          const diffMinutes = closestTime - nowTime;
+          let diffMinutes = closestTime - nowTime;
+          if (diffMinutes < 0) {
+            diffMinutes += 24 * 60; // เพิ่ม 24 ชั่วโมงในกรณีที่เวลาที่ใกล้ที่สุดอยู่ในวันถัดไป
+          }
+
+          // ตรวจสอบว่าเวลาที่อยู่ใกล้กับปัจจุบันมากสุดหรือไม่
+          if (diffMinutes === 0) {
+            // console.log("BBB");
+            // ถ้าเป็นเวลาที่อยู่ใกล้กับปัจจุบันมากสุด ให้แสดงค่าเวลา countdown ไปยังเวลาถัดไป
+            const nextTime = this.timesetting
+              .filter((item) => {
+                const [h, m] = item.timesetting.split(":").map(Number);
+                return h * 60 + m > nowTime;
+              })
+              .map((item) => {
+                const [h, m] = item.timesetting.split(":").map(Number);
+                return h * 60 + m;
+              })
+              .reduce((prev, curr) => {
+                return curr < prev ? curr : prev;
+              }, Infinity);
+            diffMinutes = nextTime - nowTime;
+          }
+
           this.hours = Math.floor(diffMinutes / 60);
-          this.minutes = diffMinutes % 60;
-          this.seconds = 60 - seconds;
+          this.minutes = (diffMinutes % 60) - 1;
+          this.seconds = 60 - seconds; // เนื่องจากเราต้องการนับถอยหลังทุกๆ 1 นาที ค่าของวินาทีจะถูกตั้งเป็น 60 ตลอดเวลา
         }
-      }, 1000);
+      }, 1000); // เราต้องการให้ setInterval ทำงานทุก 1 วินาที (1000 มิลลิวินาที)
     },
+
     deleteTimeSetting(id) {
       axios
         .delete(`http://localhost:3002/timesetting/${id}`)
@@ -391,7 +358,6 @@ export default {
         _payload = "BUZZER_OFF";
       }
       this.publishDataToNetpie(_payload);
-      this.updateServerStatus(_payload, this.buzzer, this.hum, this.temp);
     },
     publishDataToNetpie(payload) {
       let targetTopic = "topic=lab_ict_kps%2Fcommand";
@@ -404,7 +370,9 @@ export default {
       let data = payload;
       axios
         .put(apiurl, data, { headers })
-        .then(() => {})
+        .then(() => {
+          this.updateServerStatus(payload, this.buzzer, this.hum, this.temp);
+        })
         .catch((error) => {
           console.log("Publish failed:", error);
         });
@@ -417,6 +385,11 @@ export default {
         Hum: hum,
         Buzzer: bunzer,
       };
+      if (payload == "BUZZER_ON") {
+        logEntry.Buzzer = 1;
+      } else {
+        logEntry.Buzzer = 0;
+      }
       this.saveDataToJSON(logEntry);
     },
 
