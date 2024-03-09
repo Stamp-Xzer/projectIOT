@@ -1,0 +1,40 @@
+@tailwind base;
+
+@tailwind components;
+
+@tailwind utilities;
+
+/* h1 {
+  font-size: 40px;
+  font-weight: bolder;
+} */
+
+template {
+  margin: 0;
+  padding: 0;
+}
+
+.volume-red {
+  color: red;
+}
+.volume-green {
+  color: green;
+}
+.trashred {
+  color: red;
+}
+
+.bg {
+  background-image: url("https://cdn.discordapp.com/attachments/953603959162011651/1215644698505510962/80e0e40411ce1997.png?ex=65fd8059&is=65eb0b59&hm=12f1fb70070a7ade5a4cac16e7c147d14dabc717c11f362d8a565b11b423ce61&");
+  background-repeat: no-repeat;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+}
+
+.alert-bottom {
+  position: fixed;
+  bottom: 20px; /* ปรับตำแหน่งที่ต้องการที่นี่ */
+  left: 50%; /* ที่นี่คือความกว้างของหน้าจอที่จะอยู่ตรงกลาง */
+  transform: translateX(-50%); /* ย้ายออกไปทางซ้ายเพื่อจะอยู่ตรงกลาง */
+}
