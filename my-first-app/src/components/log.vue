@@ -7,7 +7,7 @@
           <th class="px-4 py-2 text-2xl font-bold">เวลา</th>
           <th class="px-4 py-2 text-2xl font-bold">Temperature (°C)</th>
           <th class="px-4 py-2 text-2xl font-bold">Humidity (%)</th>
-          <th class="px-4 py-2 text-2xl font-bold">เปิด/ปิดน้ำ</th>
+          <th class="px-4 py-2 text-2xl font-bold">สถานะ</th>
         </tr>
       </thead>
       <tbody class="text-xl text-gray-600">
